@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Gusxta Tech — Ordens, Laudos e Garantias</title>
+<style>
+:root{--blue:#1769aa;--green:#16845b;--ink:#17212b;--muted:#667482;--line:#dce3e9;--bg:#f3f6f8}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 system-ui,Arial,sans-serif}
+header{background:linear-gradient(115deg,#104b80,#147b61);color:#fff;padding:22px max(18px,calc((100% - 1080px)/2))}
+header h1{margin:0;font-size:25px;letter-spacing:.5px}header p{margin:5px 0 0}
+main{max-width:1080px;margin:22px auto;padding:0 16px 42px}
+button,.tab{border:0;border-radius:9px;padding:10px 14px;background:#e4ebf0;color:var(--ink);font-weight:650;cursor:pointer;font:inherit}
+button.primary,.tab.active{background:var(--blue);color:white}button.green{background:var(--green);color:white}button.danger{background:#fae8e8;color:#9c2525}
+button:hover{filter:brightness(.97)}.tabs,.actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:15px}
+.panel{background:white;border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px #12202b08}
+h2{font-size:19px;margin:0 0 14px}h3{font-size:16px;margin:0 0 10px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+label{display:block;font-size:13px;font-weight:650;color:#40505d;margin-bottom:5px}
+input,textarea{width:100%;border:1px solid #cbd5dd;border-radius:8px;padding:10px 11px;font:inherit;background:#fff;color:var(--ink)}
+textarea{min-height:76px;resize:vertical}.full{grid-column:1/-1}.muted{color:var(--muted);font-size:13px}.hidden{display:none!important}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:16px}
+.stat{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px}.stat strong{display:block;font-size:23px}
+.list{display:grid;gap:10px}.os-item{border:1px solid var(--line);border-radius:10px;padding:13px;display:flex;justify-content:space-between;gap:12px;align-items:center}
+.os-item p{margin:3px 0;color:var(--muted);font-size:13px}.pill{display:inline-block;padding:3px 8px;border-radius:20px;font-size:12px;background:#e7f4ed;color:#17623f}
+.pill.expired{background:#fae8e8;color:#9c2525}.note{background:#f0f6fb;border-left:4px solid var(--blue);padding:11px 13px;border-radius:7px;font-size:13px}
+.empty{padding:24px;text-align:center;color:var(--muted)}.logo-preview{max-width:180px;max-height:100px;object-fit:contain;display:block;margin-top:8px;border:1px dashed var(--line);border-radius:8px;padding:6px}
+.section-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--blue);font-weight:800;margin:18px 0 8px}
+.document{font-family:Arial,sans-serif;max-width:820px;margin:0 auto;color:#17212b;font-size:12px;line-height:1.48}
+.doc-head{display:flex;align-items:center;gap:16px;border-bottom:3px solid #1769aa;padding-bottom:12px;margin-bottom:16px}
+.doc-logo{width:105px;height:78px;object-fit:contain}.doc-brand{flex:1}.doc-brand h1{font-size:23px;color:#1769aa;margin:0 0 3px}.doc-brand p{margin:0;font-size:10px}
+.doc-title{font-size:16px;margin:12px 0 4px;color:#1769aa}.doc-subtitle{font-size:10px;color:#596775;margin:0 0 12px}
+.doc-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px 18px}.doc-field{margin:5px 0;overflow-wrap:anywhere}.doc-field b{color:#283b4b}
+.doc-box{border:1px solid #cbd5dd;border-radius:5px;padding:9px;margin:9px 0;break-inside:avoid}
+.doc-box h3{font-size:12px;color:#1769aa;margin:0 0 5px}.doc-box p{margin:3px 0;white-space:pre-wrap}
+.doc-price{font-size:15px;font-weight:bold;text-align:right;margin:14px 0}
+.doc-legal{font-size:10px;color:#394957}.signatures{display:flex;gap:50px;margin-top:45px}.signatures div{flex:1;border-top:1px solid #333;text-align:center;padding-top:6px}
+@media(max-width:700px){.grid,.stats,.doc-grid{grid-template-columns:1fr}.os-item{align-items:flex-start;flex-direction:column}.doc-head{align-items:flex-start}.doc-logo{width:75px}}
+@media print{
+ @page{size:A4;margin:14mm}
+ body{background:#fff}.no-print,header,main>.tabs,main>.stats{display:none!important}
+ main{margin:0;max-width:none;padding:0}.panel{border:0;box-shadow:none;padding:0;margin:0}
+ #impressao{display:block!important}.document{max-width:none;font-size:11px}
+}
+
+
+.month-chart{display:grid;gap:12px}.month-row{display:grid;grid-template-columns:82px 1fr 110px;align-items:center;gap:10px;font-size:13px}.month-track{height:13px;border-radius:12px;background:#e4ebf0;overflow:hidden}.month-fill{height:100%;background:#16845b}.month-fill.negative{background:#c44}.month-value{text-align:right;font-weight:bold}.positive{color:#16845b}.negative{color:#b42318}
+@media(max-width:700px){.month-row{grid-template-columns:65px 1fr 100px}}
+
+/* Sugestões de endereço */
+.address-wrap{position:relative}
+.address-options{position:absolute;z-index:30;top:100%;left:0;right:0;background:white;border:1px solid #cbd5dd;border-radius:9px;box-shadow:0 8px 24px #17212b22;max-height:240px;overflow:auto}
+.address-option{display:block;width:100%;border-radius:0;border-bottom:1px solid #edf1f4;background:white;text-align:left;padding:10px;font-size:13px;font-weight:400}
+.address-option:hover,.address-option:focus{background:#eaf4fc}
+.address-hint{font-size:11px;color:#667482;padding:6px 10px;background:#f8fafb}
+@media print{.address-options{display:none!important}}
+
+/* Tema escuro: interface apenas. Documentos continuam brancos para impressão. */
+:root{--blue:#5aa9f5;--green:#36c995;--ink:#e9f0f8;--muted:#a9b8c9;--line:#344357;--bg:#0d121c}
+body{background:var(--bg);color:var(--ink);color-scheme:dark}
+header{background:linear-gradient(115deg,#101c31,#113b37)}
+.panel,.stat{background:#192333;border-color:var(--line);box-shadow:0 3px 14px #0003}
+button,.tab{background:#29384c;color:#edf4fc}
+button.primary,.tab.active{background:#2476c4;color:white}
+button.green{background:#147e60;color:white}
+button.danger{background:#46292e;color:#ffb9b9}
+label{color:#c3d0df}
+input,textarea,select{background:#111b29;color:#edf4fc;border-color:#43536a;outline-color:#5aa9f5}
+input::placeholder,textarea::placeholder{color:#8799af}
+input:read-only{background:#202d3e}
+.os-item{background:#1b2839;border-color:#3a4a5d}
+.pill{background:#183c32;color:#a5f2cb}.pill.expired{background:#47292d;color:#ffb6b6}
+.note{background:#172e45;color:#dcecff;border-left-color:#5aa9f5}
+.section-label{color:#80bdff}
+.month-track{background:#304156}.month-fill{background:#37c796}
+.positive,.profit-positive{color:#65e6ad}.negative,.profit-negative{color:#ff8c8c}
+.address-options{background:#1b293b;border-color:#43536a}
+.address-option{background:#1b293b;color:#eaf1f9;border-color:#3b4b60}
+.address-option:hover,.address-option:focus{background:#284767}
+.address-hint{background:#26374a;color:#b8c7d8}
+.document{background:#fff;color:#17212b;padding:18px;border-radius:8px;color-scheme:light}
+.document .doc-field b{color:#283b4b}
+.document .doc-box{border-color:#cbd5dd}
+.document .doc-legal{color:#394957}
+.document .doc-subtitle{color:#596775}
+@media print{
+ :root{--ink:#17212b;--muted:#667482;--line:#dce3e9;--bg:#fff}
+ body{background:white!important;color:#17212b!important;color-scheme:light}
+ .document{padding:0;background:white!important;color:#17212b!important}
+ .panel{background:white!important;border:0!important;box-shadow:none!important}
+}
+</style>
+</head>
+<body>
+<header><h1>GUSXTA TECH</h1><p>Ordens de serviço • Laudos técnicos de GPU • Controle de garantia</p></header>
+<main>
+<nav class="tabs no-print">
+<button class="tab active" data-tab="dashboard">Dashboard</button>
+<button class="tab" data-tab="ordens">Ordens e laudos</button>
+<button class="tab" data-tab="nova">Nova ordem</button>
+<button class="tab" data-tab="vendas">GPUs vendidas</button>
+<button class="tab" data-tab="tecnico">Dados da assistência</button>
+
+</nav>
+
+<section id="dashboard">
+<div class="stats" style="grid-template-columns:repeat(auto-fit,minmax(170px,1fr))">
+<div class="stat"><span class="muted">Faturamento de GPUs</span><strong id="dashReceita">R$ 0,00</strong></div>
+<div class="stat"><span class="muted">Custo total</span><strong id="dashCusto">R$ 0,00</strong></div>
+<div class="stat"><span class="muted">Lucro bruto total</span><strong id="dashLucro">R$ 0,00</strong></div>
+<div class="stat"><span class="muted">GPUs vendidas</span><strong id="dashQtd">0</strong></div>
+<div class="stat"><span class="muted">Margem bruta</span><strong id="dashMargem">0%</strong></div>
+<div class="stat"><span class="muted">Lucro bruto do mês</span><strong id="dashMes">R$ 0,00</strong></div>
+</div>
+<div class="panel"><h2>Lucro bruto por mês</h2><p class="muted">Últimos 6 meses. Lucro bruto = venda − custo de aquisição; não inclui impostos, taxas, frete ou outras despesas.</p><div id="graficoMes" class="month-chart"></div></div>
+<div class="panel"><h2>Últimas vendas</h2><div id="ultimasVendas" class="list"></div></div>
+</section>
+<section id="ordens">
+<div class="stats">
+<div class="stat"><span class="muted">Ordens cadastradas</span><strong id="total">0</strong></div>
+<div class="stat"><span class="muted">Garantias vigentes</span><strong id="vigentes">0</strong></div>
+<div class="stat"><span class="muted">Garantias encerradas</span><strong id="encerradas">0</strong></div>
+</div>
+<div class="panel"><h2>Ordens cadastradas</h2>
+<input id="busca" placeholder="Buscar por OS, cliente, modelo ou número de série...">
+<div id="lista" class="list" style="margin-top:12px"></div></div>
+</section>
+
+<section id="nova" class="hidden">
+<div class="panel"><h2 id="formTitulo">Cadastrar ordem de serviço / laudo técnico</h2>
+<form id="formOS">
+<input type="hidden" id="editId">
+<div class="section-label">Dados do cliente</div>
+<div class="grid">
+<div><label>Nome completo do cliente *</label><input id="cliente" required></div>
+<div><label>Telefone / WhatsApp</label><input id="telefone"></div>
+<div><label>CPF / CNPJ</label><input id="cpfCliente"></div>
+<div class="full"><label>CEP</label><input id="cliCep" inputmode="numeric" maxlength="9" placeholder="00000-000"><small class="muted" id="cliCepStatus">Digite o CEP para preencher rua, bairro, cidade e estado.</small></div>
+<div><label>Rua / logradouro</label><input id="cliRua" placeholder="Rua ou avenida"></div>
+<div><label>Número (preenchimento manual)</label><input id="cliNumero" placeholder="Ex.: 862"></div>
+<div><label>Bairro</label><input id="cliBairro"></div>
+<div><label>Cidade</label><input id="cliCidade"></div>
+<div><label>Estado (UF)</label><input id="cliEstado" maxlength="2" placeholder="CE"></div>
+<div><label>Complemento</label><input id="cliComplemento" placeholder="Casa, apto, bloco..."></div><input type="hidden" id="endCliente">
+</div>
+<div class="section-label">Identificação da placa de vídeo</div>
+<div class="grid">
+<div><label>Fabricante / modelo da GPU *</label><input id="gpu" required placeholder="Ex.: RX 580 8GB Sapphire"></div>
+<div><label>Número de série</label><input id="serial"></div>
+<div><label>Data de entrada</label><input id="dataEntrada" type="date"></div>
+<div><label>Data do reparo / entrega *</label><input id="dataReparo" type="date" required></div>
+</div>
+<div class="section-label">Laudo técnico</div>
+<div class="grid">
+<div class="full"><label>Defeito relatado pelo cliente</label><textarea id="defeito" placeholder="O que o cliente informou sobre a placa..."></textarea></div>
+<div class="full"><label>Defeito encontrado na análise técnica *</label><textarea id="defeitoEncontrado" required placeholder="Descreva o defeito constatado nos testes..."></textarea></div>
+<div class="full"><label>Local do reparo / linha ou circuito reparado *</label><input id="localReparo" required placeholder="Ex.: linha de alimentação de 1,8 V / circuito de sinal PCIe"></div>
+<div class="full"><label>Procedimento e serviço executado *</label><textarea id="diagnostico" required placeholder="Descreva os componentes, procedimentos e testes realizados..."></textarea></div>
+<div><label>Valor cobrado pelo serviço (R$)</label><input id="valor" type="text" inputmode="numeric" placeholder="0,00"></div>
+<div><label>Observações adicionais</label><textarea id="observacoes"></textarea></div>
+</div>
+<div class="note" style="margin-top:14px"><b>Garantia:</b> o documento informa 90 dias para o serviço em bem durável, nos termos do art. 26, II, do Código de Defesa do Consumidor, contados da conclusão/entrega do serviço. O escopo técnico identifica o defeito e a linha/circuito reparados, sem excluir direitos legais do consumidor.</div>
+<div class="actions" style="margin-top:14px">
+<button class="primary">Salvar ordem</button><button type="button" id="limpar">Limpar formulário</button>
+</div>
+</form></div></section>
+
+<section id="vendas" class="hidden">
+<div class="panel"><h2 id="tituloVenda">Cadastrar GPU vendida</h2>
+<form id="formVenda"><input type="hidden" id="editVendaId"><div class="grid">
+<div><label>Modelo da GPU *</label><input id="vGpu" required placeholder="Ex.: RTX 3060 12GB ASUS"></div>
+<div><label>Número de série</label><input id="vSerial"></div>
+<div><label>Data da venda *</label><input id="vData" type="date" required></div>
+<div><label>Cliente / comprador *</label><input id="vCliente" required></div>
+<div><label>CPF/CNPJ do cliente</label><input id="vCpf"></div>
+<div><label>Telefone do cliente</label><input id="vTelefone"></div>
+<div class="full"><label>CEP</label><input id="venCep" inputmode="numeric" maxlength="9" placeholder="00000-000"><small class="muted" id="venCepStatus">Digite o CEP para preencher rua, bairro, cidade e estado.</small></div>
+<div><label>Rua / logradouro</label><input id="venRua" placeholder="Rua ou avenida"></div>
+<div><label>Número (preenchimento manual)</label><input id="venNumero" placeholder="Ex.: 862"></div>
+<div><label>Bairro</label><input id="venBairro"></div>
+<div><label>Cidade</label><input id="venCidade"></div>
+<div><label>Estado (UF)</label><input id="venEstado" maxlength="2" placeholder="CE"></div>
+<div><label>Complemento</label><input id="venComplemento" placeholder="Casa, apto, bloco..."></div><input type="hidden" id="vEndereco">
+<div><label>Valor de custo (R$) *</label><input id="vCusto" type="text" inputmode="numeric" required></div>
+<div><label>Valor de venda (R$) *</label><input id="vVenda" type="text" inputmode="numeric" required></div>
+<div><label>Lucro bruto calculado</label><input id="vLucroPreview" readonly value="R$ 0,00"></div>
+<div><label>Observações</label><input id="vObs"></div></div>
+<div class="section-label">Garantia da GPU vendida</div>
+<div class="grid">
+<div><label>Data de entrega da GPU *</label><input id="vEntrega" type="date" required></div>
+<div><label>Prazo da garantia legal</label><input value="90 dias — CDC, art. 26, II" readonly></div>
+<div class="full"><label>Condição da GPU</label><select id="vCondicao" style="width:100%;padding:10px;border:1px solid #cbd5dd;border-radius:8px;font:inherit"><option value="Nova">Nova</option><option value="Usada">Usada</option><option value="Recondicionada">Recondicionada</option></select></div>
+<div class="full"><label>Informações adicionais da garantia (opcional)</label><textarea id="vGarantiaObs" placeholder="Ex.: acessórios entregues, condições informadas ao comprador..."></textarea></div>
+</div>
+<div class="note" style="margin-top:12px">O termo de venda informa a garantia legal de 90 dias para produto durável (CDC, art. 26, II). O prazo para vícios aparentes começa na entrega efetiva; para vícios ocultos, quando o defeito se evidenciar (art. 26, § 3º). O documento não limita direitos do consumidor.</div>
+<div class="actions" style="margin-top:14px"><button class="primary">Salvar venda</button><button type="button" id="limparVenda">Limpar</button></div></form></div>
+<div class="panel"><h2>Histórico de vendas</h2><input id="buscaVendas" placeholder="Buscar modelo, série ou cliente"><div id="listaVendas" class="list" style="margin-top:12px"></div></div>
+</section>
+<section id="tecnico" class="hidden">
+<div class="panel"><h2>Cadastro da assistência / técnico</h2><p class="muted">Esses dados e a logo serão exibidos no cabeçalho do laudo e do termo de garantia.</p>
+<form id="formTecnico"><div class="grid">
+<div><label>Nome da assistência / nome fantasia *</label><input id="nomeTec" required placeholder="Gusxta Tech"></div>
+<div><label>CPF ou CNPJ</label><input id="docTec"></div>
+<div><label>Telefone / WhatsApp</label><input id="foneTec"></div>
+<div><label>Instagram / rede social</label><input id="instaTec" placeholder="@gusxtatech"></div>
+<div class="full"><label>CEP</label><input id="tecCep" inputmode="numeric" maxlength="9" placeholder="00000-000"><small class="muted" id="tecCepStatus">Digite o CEP para preencher rua, bairro, cidade e estado.</small></div>
+<div><label>Rua / logradouro</label><input id="tecRua" placeholder="Rua ou avenida"></div>
+<div><label>Número (preenchimento manual)</label><input id="tecNumero" placeholder="Ex.: 862"></div>
+<div><label>Bairro</label><input id="tecBairro"></div>
+<div><label>Cidade</label><input id="tecCidade"></div>
+<div><label>Estado (UF)</label><input id="tecEstado" maxlength="2" placeholder="CE"></div>
+<div><label>Complemento</label><input id="tecComplemento" placeholder="Casa, apto, bloco..."></div><input type="hidden" id="endTec">
+<div class="full"><label>Logo da assistência (PNG, JPG ou WebP)</label><input id="logoTec" type="file" accept="image/png,image/jpeg,image/webp"><img id="logoPreview" class="logo-preview hidden" alt="Prévia da logo"><p class="muted">A imagem fica salva neste navegador e aparece no PDF. Você pode trocar a logo quando quiser.</p></div>
+</div><div class="actions" style="margin-top:14px"><button class="green">Salvar dados da assistência</button></div></form></div>
+<div class="panel"><h3>Backup dos dados</h3><p class="muted">As ordens, cadastro da assistência e logo ficam salvos neste navegador/dispositivo. Exporte backups regularmente para não perder os registros.</p>
+<div class="actions"><button id="exportar">Exportar backup</button><label class="tab" for="importar">Importar backup</label><input id="importar" type="file" accept="application/json" class="hidden"></div></div>
+</section>
+
+<section id="impressao" class="hidden">
+<div class="panel"><div id="folha"></div></div>
+<div class="actions no-print"><button class="primary" id="pdf">Salvar termo/laudo em PDF / Imprimir</button><button id="voltar">Voltar às ordens</button></div>
+<p class="muted no-print">Ao clicar em “Salvar termo/laudo em PDF”, escolha “Salvar como PDF” na janela de impressão do navegador.</p>
+</section>
+</main>
+<script>
+const $=id=>document.getElementById(id),KEY='gusxta_os_v2',TECH='gusxta_tec_v2',SALES='gusxta_gpu_vendas_v1',GARANTIA_DIAS=90;
+let vendas=JSON.parse(localStorage.getItem(SALES)||'[]');
+let ordens=JSON.parse(localStorage.getItem(KEY)||'[]'),tecnico=JSON.parse(localStorage.getItem(TECH)||'{"nomeTec":"Gusxta Tech","instaTec":"@gusxtatech"}');
+if(!localStorage.getItem(TECH)&&localStorage.getItem('gusxta_tec_v1')){try{tecnico={...tecnico,...JSON.parse(localStorage.getItem('gusxta_tec_v1'))};localStorage.setItem(TECH,JSON.stringify(tecnico))}catch(e){}}
+const fields=['cliente','telefone','cpfCliente','endCliente','gpu','serial','defeito','defeitoEncontrado','localReparo','diagnostico','dataEntrada','dataReparo','valor','observacoes'];
+const today=()=>{let d=new Date(),off=d.getTimezoneOffset();return new Date(d.getTime()-off*60000).toISOString().slice(0,10)};
+const dateBR=s=>s?new Date(s+'T12:00:00').toLocaleDateString('pt-BR'):'—';
+const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const money=v=>v!==''&&v!=null&&Number(v)>0?Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'Não informado';
+const expiry=o=>{let d=new Date(o.dataReparo+'T12:00:00');d.setDate(d.getDate()+GARANTIA_DIAS);return d};
+const status=o=>expiry(o)>=new Date(new Date().toDateString())?'Vigente':'Encerrada';
+const save=()=>localStorage.setItem(KEY,JSON.stringify(ordens));
+function tab(n){['dashboard','ordens','nova','vendas','tecnico','impressao'].forEach(x=>$(x).classList.toggle('hidden',x!==n));document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===n));if(n==='dashboard')renderDashboard();if(n==='vendas')renderVendas()}
+document.querySelectorAll('[data-tab]').forEach(b=>b.onclick=()=>{if(b.dataset.tab==='nova'&&!$('editId').value)limpar();tab(b.dataset.tab)});
+function render(){
+ let v=ordens.filter(o=>status(o)==='Vigente').length;
+ $('total').textContent=ordens.length;$('vigentes').textContent=v;$('encerradas').textContent=ordens.length-v;
+ let q=$('busca').value.toLowerCase(),rows=ordens.filter(o=>[o.numero,o.cliente,o.gpu,o.serial].join(' ').toLowerCase().includes(q)).sort((a,b)=>b.criado-a.criado);
+ $('lista').innerHTML=rows.length?rows.map(o=>`<div class="os-item"><div><b>OS ${safe(o.numero)} · ${safe(o.gpu)}</b><p>${safe(o.cliente)} · Reparo: ${dateBR(o.dataReparo)} · Garantia até: ${dateBR(expiry(o).toISOString().slice(0,10))}</p><span class="pill ${status(o)==='Encerrada'?'expired':''}">${status(o)}</span></div><div class="actions"><button onclick="ver('${o.id}')">Abrir / PDF</button><button onclick="editar('${o.id}')">Editar</button><button class="danger" onclick="excluir('${o.id}')">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhuma ordem cadastrada.</div>';
+}
+const saveVendas=()=>localStorage.setItem(SALES,JSON.stringify(vendas));
+const num=n=>Number(n||0),lucroVenda=v=>num(v.venda)-num(v.custo);
+const fmt=v=>num(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function renderDashboard(){
+ const receita=vendas.reduce((a,v)=>a+num(v.venda),0),custo=vendas.reduce((a,v)=>a+num(v.custo),0),lucro=receita-custo;
+ const mesAtual=today().slice(0,7),lucroMes=vendas.filter(v=>v.data.slice(0,7)===mesAtual).reduce((a,v)=>a+lucroVenda(v),0);
+ $('dashReceita').textContent=fmt(receita);$('dashCusto').textContent=fmt(custo);$('dashLucro').textContent=fmt(lucro);
+ $('dashLucro').className=lucro>=0?'positive':'negative';$('dashQtd').textContent=vendas.length;
+ $('dashMargem').textContent=(receita?100*lucro/receita:0).toLocaleString('pt-BR',{maximumFractionDigits:1})+'%';$('dashMes').textContent=fmt(lucroMes);
+ const months=[];for(let i=5;i>=0;i--){const d=new Date();d.setDate(1);d.setMonth(d.getMonth()-i);months.push(`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`)}
+ const vals=months.map(m=>({m,total:vendas.filter(v=>v.data.slice(0,7)===m).reduce((a,v)=>a+lucroVenda(v),0)})),max=Math.max(1,...vals.map(x=>Math.abs(x.total)));
+ $('graficoMes').innerHTML=vals.map(x=>`<div class="month-row"><span>${new Date(x.m+'-15T12:00:00').toLocaleDateString('pt-BR',{month:'short',year:'2-digit'})}</span><div class="month-track"><div class="month-fill ${x.total<0?'negative':''}" style="width:${Math.abs(x.total)/max*100}%"></div></div><span class="month-value ${x.total>=0?'positive':'negative'}">${fmt(x.total)}</span></div>`).join('');
+ const ult=[...vendas].sort((a,b)=>b.data.localeCompare(a.data)).slice(0,5);
+ $('ultimasVendas').innerHTML=ult.length?ult.map(v=>`<div class="os-item"><div><b>${safe(v.gpu)}</b><p>${dateBR(v.data)} · Venda: ${fmt(v.venda)} · Custo: ${fmt(v.custo)}</p></div><b class="${lucroVenda(v)>=0?'positive':'negative'}">${fmt(lucroVenda(v))}</b></div>`).join(''):'<div class="empty">Nenhuma venda cadastrada.</div>';
+}
+function limparVenda(){$('formVenda').reset();setTimeout(()=>clearAddress('ven'),0);$('editVendaId').value='';$('vData').value=today();$('vEntrega').value=today();$('vLucroPreview').value=fmt(0);$('tituloVenda').textContent='Cadastrar GPU vendida'}
+function renderVendas(){const q=$('buscaVendas').value.toLowerCase(),rows=[...vendas].filter(v=>[v.gpu,v.serial,v.cliente].join(' ').toLowerCase().includes(q)).sort((a,b)=>b.data.localeCompare(a.data));
+ $('listaVendas').innerHTML=rows.length?rows.map(v=>`<div class="os-item"><div><b>${safe(v.gpu)}</b><p>${safe(v.cliente||'Cliente não informado')} · ${dateBR(v.data)} · Custo: ${fmt(v.custo)} · Venda: ${fmt(v.venda)}</p><b class="${lucroVenda(v)>=0?'positive':'negative'}">Lucro bruto: ${fmt(lucroVenda(v))}</b></div><div class="actions"><button onclick="editarVenda('${v.id}')">Editar</button><button class="green" onclick="termoVenda('${v.id}')">Termo de garantia PDF</button><button class="danger" onclick="excluirVenda('${v.id}')">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhuma venda cadastrada.</div>';
+}
+function termoVenda(id){
+ const v=vendas.find(x=>x.id===id);if(!v)return;
+ const t=tecnico,entrega=v.entrega||v.data,base=new Date(entrega+'T12:00:00');base.setDate(base.getDate()+90);
+ const fim=dateBR(base.toISOString().slice(0,10));
+ const logo=t.logo?`<img class="doc-logo" src="${t.logo}" alt="Logo da assistência">`:'';
+ const val=(label,value)=>`<div class="doc-field"><b>${label}:</b> ${safe(value||'—')}</div>`;
+ $('folha').innerHTML=`<article class="document">
+ <div class="doc-head">${logo}<div class="doc-brand"><h1>${safe(t.nomeTec||'GUSXTA TECH')}</h1><p>${safe(t.docTec||'')}${t.foneTec?' · '+safe(t.foneTec):''}${t.instaTec?' · '+safe(t.instaTec):''}</p><p>${safe(t.endTec||'')}</p></div></div>
+ <h2 class="doc-title">TERMO DE GARANTIA — VENDA DE PLACA DE VÍDEO</h2>
+ <p class="doc-subtitle">Comprovante de venda e informações sobre a garantia legal do produto</p>
+ <div class="doc-box"><h3>DADOS DO COMPRADOR</h3><div class="doc-grid">${val('Nome',v.cliente)}${val('CPF/CNPJ',v.cpf)}${val('Telefone',v.telefone)}${val('Endereço',v.endereco)}</div></div>
+ <div class="doc-box"><h3>IDENTIFICAÇÃO DA GPU</h3><div class="doc-grid">${val('Modelo',v.gpu)}${val('Número de série',v.serial)}${val('Condição declarada',v.condicao||'Não informada')}${val('Data da venda',dateBR(v.data))}${val('Data da entrega',dateBR(entrega))}</div></div>
+ <div class="doc-box"><h3>GARANTIA LEGAL — CÓDIGO DE DEFESA DO CONSUMIDOR</h3>
+ <p>Nos termos do art. 26, inciso II, da Lei nº 8.078/1990 (Código de Defesa do Consumidor), o prazo legal para reclamar de vícios aparentes ou de fácil constatação em produtos duráveis é de <b>90 (noventa) dias</b>, contado da entrega efetiva do produto. Para esta venda, a entrega informada foi em <b>${dateBR(entrega)}</b>, com data de referência para o fim desse prazo em <b>${fim}</b>.</p>
+ <p>Para vícios ocultos, o prazo começa no momento em que o defeito ficar evidenciado, conforme art. 26, § 3º, do CDC. A garantia legal não depende de termo escrito (art. 24) e não pode ser afastada por cláusulas contratuais. A condição de produto usado ou recondicionado, quando informada, não elimina automaticamente a garantia legal.</p>
+ <p><b>Condições de uso e conservação:</b> A garantia legal cobre vícios do produto nos termos do CDC, mas não abrange danos comprovadamente decorrentes de mau uso, quedas, impactos, contato com líquidos, instalação inadequada, alterações elétricas externas ou intervenções indevidas, quando tais eventos forem a causa do problema apresentado. A constatação será feita por avaliação técnica, considerando as circunstâncias do caso. Essas condições não afastam a responsabilidade do fornecedor por vícios preexistentes ou outros direitos previstos em lei.</p>
+ <p>Em caso de problema, o comprador poderá entrar em contato com o fornecedor para avaliação e providências conforme os arts. 18 e 26 do CDC. Este documento não restringe os direitos assegurados pela legislação, nem exclui eventual garantia contratual adicional concedida em documento próprio.</p>
+ ${v.garantiaObs?`<p><b>Informações adicionais:</b> ${safe(v.garantiaObs)}</p>`:''}
+ </div>
+ ${v.obs?`<div class="doc-box"><h3>OBSERVAÇÕES DA VENDA</h3><p>${safe(v.obs)}</p></div>`:''}
+ <div class="doc-price">Valor da venda: ${fmt(v.venda)}</div>
+ <p class="doc-legal">Declaro ter recebido o produto acima identificado e as informações de garantia descritas neste documento.</p>
+ <p>Local e data: __________________________________________________________</p>
+ <div class="signatures"><div>Assinatura do comprador</div><div>Assinatura do vendedor</div></div>
+ <p class="doc-subtitle" style="margin-top:22px">Conserve este termo e o comprovante de pagamento. Recomenda-se uma via para cada parte.</p>
+ </article>`;
+ tab('impressao');
+}
+function editarVenda(id){const v=vendas.find(x=>x.id===id);if(!v)return;[['vGpu','gpu'],['vSerial','serial'],['vData','data'],['vCliente','cliente'],['vCpf','cpf'],['vTelefone','telefone'],['vEndereco','endereco'],['vEntrega','entrega'],['vCondicao','condicao'],['vGarantiaObs','garantiaObs'],['vCusto','custo'],['vVenda','venda'],['vObs','obs']].forEach(([a,b])=>$(a).value=v[b]??'');$('vCusto').value=fmt(v.custo);$('vVenda').value=fmt(v.venda);splitAddress('ven',v.endereco||'');$('editVendaId').value=id;$('tituloVenda').textContent='Editar venda de GPU';atualizaLucro();tab('vendas')}
+function excluirVenda(id){if(confirm('Excluir esta venda?')){vendas=vendas.filter(v=>v.id!==id);saveVendas();renderVendas();renderDashboard()}}
+function atualizaLucro(){$('vLucroPreview').value=fmt(parseBRL($('vVenda').value)-parseBRL($('vCusto').value))}
+$('vCusto').oninput=atualizaLucro;$('vVenda').oninput=atualizaLucro;$('buscaVendas').oninput=renderVendas;$('limparVenda').onclick=limparVenda;
+$('formVenda').onsubmit=e=>{e.preventDefault();syncAddress('ven','vEndereco');const id=$('editVendaId').value,v={gpu:$('vGpu').value.trim(),serial:$('vSerial').value.trim(),data:$('vData').value,cliente:$('vCliente').value.trim(),cpf:$('vCpf').value.trim(),telefone:$('vTelefone').value.trim(),endereco:$('vEndereco').value.trim(),entrega:$('vEntrega').value,condicao:$('vCondicao').value,garantiaObs:$('vGarantiaObs').value.trim(),custo:parseBRL($('vCusto').value),venda:parseBRL($('vVenda').value),obs:$('vObs').value.trim()};if(id){const i=vendas.findIndex(x=>x.id===id);if(i>=0)vendas[i]={...vendas[i],...v}}else{v.id=crypto.randomUUID();vendas.push(v)}saveVendas();limparVenda();renderVendas();renderDashboard();alert('Venda salva!')};
+$('busca').oninput=render;
+function limpar(){$('formOS').reset();setTimeout(()=>clearAddress('cli'),0);$('editId').value='';$('dataEntrada').value=today();$('dataReparo').value=today();$('formTitulo').textContent='Cadastrar ordem de serviço / laudo técnico'}
+$('limpar').onclick=limpar;
+$('formOS').onsubmit=e=>{
+ e.preventDefault();syncAddress('cli','endCliente');let id=$('editId').value,o={};fields.forEach(f=>o[f]=$(f).value.trim());
+ o.valor=parseBRL(o.valor);o.garantiaDias=GARANTIA_DIAS;
+ if(id){let i=ordens.findIndex(x=>x.id===id);ordens[i]={...ordens[i],...o}}
+ else{o.id=crypto.randomUUID();o.numero=String(Date.now()).slice(-7);o.criado=Date.now();ordens.push(o)}
+ save();limpar();render();tab('ordens');
+};
+function editar(id){let o=ordens.find(x=>x.id===id);if(!o)return;fields.forEach(f=>$(f).value=o[f]??'');$('valor').value=o.valor==null?'':fmt(o.valor);splitAddress('cli',o.endCliente||'');$('editId').value=id;$('formTitulo').textContent='Editar ordem de serviço / laudo técnico';tab('nova')}
+function excluir(id){if(confirm('Excluir esta ordem de serviço?')){ordens=ordens.filter(o=>o.id!==id);save();render()}}
+function ver(id){
+ let o=ordens.find(x=>x.id===id);if(!o)return;let fim=dateBR(expiry(o).toISOString().slice(0,10)),t=tecnico;
+ const logo=t.logo?`<img class="doc-logo" src="${t.logo}" alt="Logo da assistência">`:'';
+ const val=(label,value)=>`<div class="doc-field"><b>${label}:</b> ${safe(value||'—')}</div>`;
+ $('folha').innerHTML=`<article class="document">
+ <div class="doc-head">${logo}<div class="doc-brand"><h1>${safe(t.nomeTec||'GUSXTA TECH')}</h1><p>${safe(t.docTec||'')}${t.foneTec?' · '+safe(t.foneTec):''}${t.instaTec?' · '+safe(t.instaTec):''}</p><p>${safe(t.endTec||'')}</p></div></div>
+ <h2 class="doc-title">LAUDO TÉCNICO • ORDEM DE SERVIÇO Nº ${safe(o.numero)}</h2>
+ <p class="doc-subtitle">Relatório de avaliação e reparo de placa de vídeo</p>
+ <div class="doc-box"><h3>DADOS DO CLIENTE</h3><div class="doc-grid">${val('Nome',o.cliente)}${val('Telefone / WhatsApp',o.telefone)}${val('CPF / CNPJ',o.cpfCliente)}${val('Endereço',o.endCliente)}</div></div>
+ <div class="doc-box"><h3>IDENTIFICAÇÃO DO EQUIPAMENTO</h3><div class="doc-grid">${val('Placa de vídeo / modelo',o.gpu)}${val('Número de série',o.serial)}${val('Data de entrada',dateBR(o.dataEntrada))}${val('Data do reparo / entrega',dateBR(o.dataReparo))}</div></div>
+ <div class="doc-box"><h3>RELATO E DIAGNÓSTICO TÉCNICO</h3><p><b>Defeito relatado pelo cliente:</b> ${safe(o.defeito||'Não informado')}</p><p><b>Defeito encontrado na análise:</b> ${safe(o.defeitoEncontrado)}</p><p><b>Local / linha / circuito reparado:</b> ${safe(o.localReparo)}</p><p><b>Procedimento e serviço executado:</b> ${safe(o.diagnostico)}</p>${o.observacoes?`<p><b>Observações:</b> ${safe(o.observacoes)}</p>`:''}</div>
+ <div class="doc-box"><h3>TERMO DE GARANTIA DO SERVIÇO — 90 DIAS</h3>
+ <p>A assistência identificada neste documento concede garantia de 90 (noventa) dias para o serviço realizado, observadas as disposições do art. 26, inciso II, do Código de Defesa do Consumidor, quando aplicável a serviço durável. O prazo é contado da conclusão e entrega do serviço em ${dateBR(o.dataReparo)}, com término previsto em <b>${fim}</b>.</p>
+ <p><b>Escopo técnico informado:</b> a garantia referente a este reparo diz respeito ao defeito descrito neste laudo e ao serviço executado na linha/circuito identificado como: <b>${safe(o.localReparo)}</b>.</p>
+ <p><b>Cuidados e situações não cobertas:</b> Danos comprovadamente causados por mau uso, impactos, líquidos, alimentação elétrica inadequada ou intervenções indevidas posteriores ao reparo não são cobertos quando não guardarem relação com vício do serviço prestado. Qualquer ocorrência será analisada tecnicamente, sem exclusão automática da garantia legal nem prejuízo dos direitos do consumidor previstos no CDC.</p>
+ <p>Em caso de retorno, o equipamento deverá ser apresentado para avaliação técnica, a fim de verificar o defeito e sua relação com o serviço realizado. A identificação do escopo do reparo não afasta a garantia legal, os prazos aplicáveis a vícios ocultos (art. 26, § 3º, do CDC), nem qualquer outro direito obrigatório do consumidor.</p></div>
+ <div class="doc-price">Valor cobrado pelo serviço: ${money(o.valor)}</div>
+ <p class="doc-legal">Declaro que recebi as informações sobre a avaliação, o serviço executado e as condições de garantia descritas neste documento.</p>
+ <p>Local e data: __________________________________________________________</p>
+ <div class="signatures"><div>Assinatura do cliente</div><div>Assinatura do técnico</div></div>
+ <p class="doc-subtitle" style="margin-top:22px">Gusxta Tech • Laudo e comprovante do serviço. Recomenda-se que cliente e assistência mantenham uma via deste documento.</p>
+ </article>`;
+ tab('impressao');
+}
+$('pdf').onclick=()=>window.print();
+$('voltar').onclick=()=>tab('ordens');
+$('formTecnico').onsubmit=e=>{e.preventDefault();syncAddress('tec','endTec');['nomeTec','docTec','foneTec','instaTec','endTec'].forEach(f=>tecnico[f]=$(f).value.trim());localStorage.setItem(TECH,JSON.stringify(tecnico));alert('Dados da assistência salvos neste dispositivo.')};
+function loadTech(){['nomeTec','docTec','foneTec','instaTec','endTec'].forEach(f=>$(f).value=tecnico[f]||'');splitAddress('tec',tecnico.endTec||'');if(tecnico.logo){$('logoPreview').src=tecnico.logo;$('logoPreview').classList.remove('hidden')}}
+$('logoTec').onchange=async e=>{
+ const file=e.target.files[0];if(!file)return;
+ if(!file.type.startsWith('image/')){alert('Selecione um arquivo de imagem.');return}
+ const reader=new FileReader();reader.onload=()=>{
+  const img=new Image();img.onload=()=>{
+   const scale=Math.min(1,1000/img.width),canvas=document.createElement('canvas');canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);
+   canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);
+   tecnico.logo=canvas.toDataURL('image/jpeg',.82);$('logoPreview').src=tecnico.logo;$('logoPreview').classList.remove('hidden');
+   try{localStorage.setItem(TECH,JSON.stringify(tecnico))}catch(err){alert('A logo é muito grande para salvar. Tente uma imagem menor.')}
+  };img.src=reader.result;
+ };reader.readAsDataURL(file);
+};
+$('exportar').onclick=()=>{let blob=new Blob([JSON.stringify({versao:3,ordens,vendas,tecnico},null,2)],{type:'application/json'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='backup-gusxta-tech.json';a.click();URL.revokeObjectURL(a.href)};
+$('importar').onchange=async e=>{
+ let f=e.target.files[0];if(!f)return;
+ try{let d=JSON.parse(await f.text());if(!Array.isArray(d.ordens))throw Error();
+  if(confirm('Importar backup e substituir os dados atuais?')){ordens=d.ordens;vendas=Array.isArray(d.vendas)?d.vendas:[];tecnico=d.tecnico||tecnico;save();saveVendas();localStorage.setItem(TECH,JSON.stringify(tecnico));loadTech();render();renderVendas();renderDashboard();alert('Backup importado.')}
+ }catch{alert('Arquivo de backup inválido.')}e.target.value='';
+};
+// Migração simples dos cadastros da versão anterior, se ainda existirem neste navegador.
+try{if(!localStorage.getItem(KEY)&&localStorage.getItem('gusxta_os_v1')){let old=JSON.parse(localStorage.getItem('gusxta_os_v1'));if(Array.isArray(old)){ordens=old.map(o=>({...o,cpfCliente:o.cpfCliente||'',endCliente:o.endCliente||'',defeitoEncontrado:o.defeitoEncontrado||o.diagnostico||'',localReparo:o.localReparo||o.escopo||''}));save()}}}catch(e){}
+// Inicialização movida para depois da configuração do CEP.
+
+
+// Máscaras brasileiras: CPF/CNPJ, telefones e valores em reais.
+const onlyDigits=s=>String(s||'').replace(/\D/g,'');
+function maskDoc(s){const d=onlyDigits(s).slice(0,14);if(d.length<=11)return d.replace(/^(\d{3})(\d)/,'$1.$2').replace(/^(\d{3})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.'+'$1-$2');return d.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.'+'$1/$2').replace(/(\d{4})(\d)/,'$1-$2')}
+function maskPhone(s){const d=onlyDigits(s).slice(0,11);if(d.length<=2)return d.length?'('+d:'';if(d.length<=6)return '('+d.slice(0,2)+') '+d.slice(2);const n=d.length===11?5:4;return '('+d.slice(0,2)+') '+d.slice(2,2+n)+(d.length>2+n?'-'+d.slice(2+n):'')}
+function maskBRL(s){const digits=onlyDigits(s).slice(0,13);return (Number(digits||0)/100).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}
+function parseBRL(s){const t=String(s??'').trim();if(!t)return 0;return Number(t.replace(/[^\d,.-]/g,'').replace(/\./g,'').replace(',','.'))||0}
+function installMasks(){
+ for(const id of ['docTec','cpfCliente','vCpf']){const el=$(id);if(el){el.setAttribute('inputmode','numeric');el.setAttribute('maxlength','18');el.addEventListener('input',()=>el.value=maskDoc(el.value))}}
+ for(const id of ['foneTec','telefone','vTelefone']){const el=$(id);if(el){el.setAttribute('inputmode','numeric');el.setAttribute('maxlength','16');el.addEventListener('input',()=>el.value=maskPhone(el.value))}}
+ for(const id of ['valor','vCusto','vVenda']){const el=$(id);if(el){el.setAttribute('inputmode','numeric');el.addEventListener('input',()=>{el.value=maskBRL(el.value);if(id!=='valor')atualizaLucro()})}}
+}
+installMasks();
+
+
+
+// Busca simples por CEP via ViaCEP, sem chaves de API.
+const addressParts=['Cep','Rua','Numero','Bairro','Cidade','Estado','Complemento'];
+function clearAddress(prefix){for(const part of addressParts){const el=$(prefix+part);if(el)el.value=''}const status=$(prefix+'CepStatus');if(status)status.textContent='Digite o CEP para preencher rua, bairro, cidade e estado.'}
+function syncAddress(prefix,target){
+ const get=k=>$(prefix+k).value.trim();
+ const parts=[get('Rua'),get('Numero'),get('Complemento'),get('Bairro'),get('Cidade'),get('Estado')].filter(Boolean);
+ const cep=get('Cep');$(target).value=parts.join(', ')+(cep?' - CEP '+cep:'');
+}
+function splitAddress(prefix,old){
+ clearAddress(prefix);if(!old)return;
+ const match=old.match(/CEP\s*(\d{5}-?\d{3})/i);
+ if(match)$(prefix+'Cep').value=maskCep(match[1]);
+ const without=old.replace(/\s*-?\s*CEP\s*\d{5}-?\d{3}/i,'');
+ const parts=without.split(',').map(x=>x.trim()).filter(Boolean);
+ if(parts.length)$(prefix+'Rua').value=parts[0];
+ if(parts.length>1)$(prefix+'Numero').value=parts[1];
+ if(parts.length>2)$(prefix+'Complemento').value=parts.slice(2).join(', ');
+ if(match)lookupCep(prefix,false);
+}
+function maskCep(raw){const d=String(raw||'').replace(/\D/g,'').slice(0,8);return d.length>5?d.slice(0,5)+'-'+d.slice(5):d}
+const cepRequests={};
+async function lookupCep(prefix,reset=true){
+ const cep=$(prefix+'Cep').value.replace(/\D/g,'');
+ const msg=$(prefix+'CepStatus');
+ if(cep.length!==8){msg.textContent='Digite os 8 números do CEP brasileiro.';return}
+ if(cepRequests[prefix])cepRequests[prefix].abort();
+ const controller=new AbortController();cepRequests[prefix]=controller;
+ msg.textContent='Consultando CEP...';
+ const services=[
+  {name:'ViaCEP',url:'https://viacep.com.br/ws/'+cep+'/json/',parse:d=>({rua:d.logradouro,bairro:d.bairro,cidade:d.localidade,uf:d.uf})},
+  {name:'BrasilAPI',url:'https://brasilapi.com.br/api/cep/v1/'+cep,parse:d=>({rua:d.street,bairro:d.neighborhood,cidade:d.city,uf:d.state})}
+ ];
+ let found=null,invalid=0,errors=[];
+ for(const service of services){
+  try{
+   const res=await fetch(service.url,{signal:controller.signal,cache:'no-store',mode:'cors'});
+   if(res.status===404){invalid++;continue}
+   if(!res.ok){errors.push(service.name+' retornou HTTP '+res.status);continue}
+   const data=await res.json();
+   if(data.erro){invalid++;continue}
+   const addr=service.parse(data);
+   if(addr.cidade&&addr.uf){found=addr;break}
+   errors.push(service.name+' não retornou cidade e estado');
+  }catch(e){if(e.name==='AbortError')return;errors.push(service.name+': '+e.message)}
+ }
+ if(cepRequests[prefix]!==controller)return;
+ if(!found){
+  msg.textContent=invalid===services.length?'CEP não localizado. Confira os 8 números.':'Não foi possível consultar os serviços de CEP: '+errors.join(' | ')+'. Confira a conexão.';
+  return;
+ }
+ for(const [part,value] of [['Rua',found.rua],['Bairro',found.bairro],['Cidade',found.cidade],['Estado',found.uf]]){
+  const field=$(prefix+part);if(field&&(reset||!field.value))field.value=value||'';
+ }
+ msg.textContent=found.rua?'Endereço encontrado! Digite somente o número.':'Cidade e estado encontrados. Informe rua e número manualmente.';
+}
+for(const prefix of ['cli','ven','tec']){
+ const el=$(prefix+'Cep');
+ el.addEventListener('input',()=>{el.value=maskCep(el.value);if(el.value.replace(/\D/g,'').length===8)lookupCep(prefix)});
+ const retry=document.createElement('button');retry.type='button';retry.textContent='Consultar CEP novamente';retry.style.cssText='margin-top:5px;padding:5px 9px;font-size:12px';retry.onclick=()=>lookupCep(prefix);$(prefix+'CepStatus').after(retry);
+}
+
+$('dataEntrada').value=today();$('dataReparo').value=today();$('vData').value=today();$('vEntrega').value=today();loadTech();render();renderVendas();renderDashboard();
+</script>
+</body></html>

@@ -147,7 +147,7 @@ input:read-only{background:#202d3e}
 <div><label>Fabricante / modelo da GPU *</label><input id="gpu" required placeholder="Ex.: RX 580 8GB Sapphire"></div>
 <div><label>Número de série</label><input id="serial"></div>
 <div><label>Data de entrada</label><input id="dataEntrada" type="date"></div>
-<div><label>Data do reparo / entrega *</label><input id="dataReparo" type="date" required></div>
+<div><label>Data do reparo / entrega *</label><input id="dataReparo" type="date" required></div><div><label>Garantia informada do reparo</label><select id="osGarantiaDias"><option value="7">7 dias</option><option value="30">30 dias</option><option value="90" selected>90 dias</option></select></div><div><label>Início da garantia do reparo</label><input id="osGarantiaInicio" type="date" readonly></div><div><label>Fim da garantia do reparo</label><input id="osGarantiaFim" type="date" readonly></div>
 </div>
 <div class="section-label">Laudo técnico</div>
 <div class="grid">
@@ -186,12 +186,12 @@ input:read-only{background:#202d3e}
 <div><label>Observações</label><input id="vObs"></div></div>
 <div class="section-label">Garantia da GPU vendida</div>
 <div class="grid">
-<div><label>Data de entrega da GPU *</label><input id="vEntrega" type="date" required></div>
-<div><label>Prazo da garantia legal</label><input value="90 dias — CDC, art. 26, II" readonly></div>
+<div><label>Data de entrega da GPU *</label><input id="vEntrega" type="date" required></div><div><label>Garantia informada na venda</label><select id="vGarantiaDias"><option value="7">7 dias</option><option value="30">30 dias</option><option value="90" selected>90 dias</option></select></div><div><label>Início da garantia (data da compra)</label><input id="vGarantiaInicio" type="date" readonly></div><div><label>Fim da garantia</label><input id="vGarantiaFim" type="date" readonly></div>
+
 <div class="full"><label>Condição da GPU</label><select id="vCondicao" style="width:100%;padding:10px;border:1px solid #cbd5dd;border-radius:8px;font:inherit"><option value="Nova">Nova</option><option value="Usada">Usada</option><option value="Recondicionada">Recondicionada</option></select></div>
 <div class="full"><label>Informações adicionais da garantia (opcional)</label><textarea id="vGarantiaObs" placeholder="Ex.: acessórios entregues, condições informadas ao comprador..."></textarea></div>
 </div>
-<div class="note" style="margin-top:12px">O termo de venda informa a garantia legal de 90 dias para produto durável (CDC, art. 26, II). O prazo para vícios aparentes começa na entrega efetiva; para vícios ocultos, quando o defeito se evidenciar (art. 26, § 3º). O documento não limita direitos do consumidor.</div>
+<div class="note" style="margin-top:12px">Você pode escolher 7, 30 ou 90 dias como prazo informado no documento. A escolha de 7 ou 30 dias não reduz a garantia legal de 90 dias para produtos duráveis prevista no CDC. O prazo para vícios aparentes começa na entrega efetiva; para vícios ocultos, quando o defeito se evidenciar (art. 26, § 3º). O documento não limita direitos do consumidor.</div>
 <div class="actions" style="margin-top:14px"><button class="primary">Salvar venda</button><button type="button" id="limparVenda">Limpar</button></div></form></div>
 <div class="panel"><h2>Histórico de vendas</h2><input id="buscaVendas" placeholder="Buscar modelo, série ou cliente"><div id="listaVendas" class="list" style="margin-top:12px"></div></div>
 </section>
@@ -231,7 +231,14 @@ const today=()=>{let d=new Date(),off=d.getTimezoneOffset();return new Date(d.ge
 const dateBR=s=>s?new Date(s+'T12:00:00').toLocaleDateString('pt-BR'):'—';
 const safe=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const money=v=>v!==''&&v!=null&&Number(v)>0?Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}):'Não informado';
-const expiry=o=>{let d=new Date(o.dataReparo+'T12:00:00');d.setDate(d.getDate()+GARANTIA_DIAS);return d};
+const addDaysISO=(iso,days=90)=>{if(!iso)return '';const d=new Date(iso+'T12:00:00');if(Number.isNaN(d.getTime()))return '';d.setDate(d.getDate()+days);return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-')};
+function refreshWarrantyDates(){
+ const os=$('dataReparo').value, sale=$('vData').value;
+ $('osGarantiaInicio').value=os; $('osGarantiaFim').value=addDaysISO(os,Number($('osGarantiaDias').value));
+ $('vGarantiaInicio').value=sale; $('vGarantiaFim').value=addDaysISO(sale,Number($('vGarantiaDias').value));
+}
+['dataReparo','vData','vEntrega','osGarantiaDias','vGarantiaDias'].forEach(id=>$(id).addEventListener('change',refreshWarrantyDates));
+const expiry=o=>{let d=new Date(o.dataReparo+'T12:00:00');d.setDate(d.getDate()+Number(o.garantiaDias||90));return d};
 const status=o=>expiry(o)>=new Date(new Date().toDateString())?'Vigente':'Encerrada';
 const save=()=>localStorage.setItem(KEY,JSON.stringify(ordens));
 function tab(n){['dashboard','ordens','nova','vendas','tecnico','impressao'].forEach(x=>$(x).classList.toggle('hidden',x!==n));document.querySelectorAll('[data-tab]').forEach(b=>b.classList.toggle('active',b.dataset.tab===n));if(n==='dashboard')renderDashboard();if(n==='vendas')renderVendas()}
@@ -257,29 +264,29 @@ function renderDashboard(){
  const ult=[...vendas].sort((a,b)=>b.data.localeCompare(a.data)).slice(0,5);
  $('ultimasVendas').innerHTML=ult.length?ult.map(v=>`<div class="os-item"><div><b>${safe(v.gpu)}</b><p>${dateBR(v.data)} · Venda: ${fmt(v.venda)} · Custo: ${fmt(v.custo)}</p></div><b class="${lucroVenda(v)>=0?'positive':'negative'}">${fmt(lucroVenda(v))}</b></div>`).join(''):'<div class="empty">Nenhuma venda cadastrada.</div>';
 }
-function limparVenda(){$('formVenda').reset();setTimeout(()=>clearAddress('ven'),0);$('editVendaId').value='';$('vData').value=today();$('vEntrega').value=today();$('vLucroPreview').value=fmt(0);$('tituloVenda').textContent='Cadastrar GPU vendida'}
+function limparVenda(){$('formVenda').reset();setTimeout(()=>clearAddress('ven'),0);$('editVendaId').value='';$('vData').value=today();$('vEntrega').value=today();$('vGarantiaDias').value='90';refreshWarrantyDates();$('vLucroPreview').value=fmt(0);$('tituloVenda').textContent='Cadastrar GPU vendida'}
 function renderVendas(){const q=$('buscaVendas').value.toLowerCase(),rows=[...vendas].filter(v=>[v.gpu,v.serial,v.cliente].join(' ').toLowerCase().includes(q)).sort((a,b)=>b.data.localeCompare(a.data));
  $('listaVendas').innerHTML=rows.length?rows.map(v=>`<div class="os-item"><div><b>${safe(v.gpu)}</b><p>${safe(v.cliente||'Cliente não informado')} · ${dateBR(v.data)} · Custo: ${fmt(v.custo)} · Venda: ${fmt(v.venda)}</p><b class="${lucroVenda(v)>=0?'positive':'negative'}">Lucro bruto: ${fmt(lucroVenda(v))}</b></div><div class="actions"><button onclick="editarVenda('${v.id}')">Editar</button><button class="green" onclick="termoVenda('${v.id}')">Termo de garantia PDF</button><button class="danger" onclick="excluirVenda('${v.id}')">Excluir</button></div></div>`).join(''):'<div class="empty">Nenhuma venda cadastrada.</div>';
 }
 function termoVenda(id){
  const v=vendas.find(x=>x.id===id);if(!v)return;
- const t=tecnico,entrega=v.entrega||v.data,base=new Date(entrega+'T12:00:00');base.setDate(base.getDate()+90);
- const fim=dateBR(base.toISOString().slice(0,10));
+ const t=tecnico,entrega=v.entrega||v.data;
+ const dias=Number(v.garantiaDias||90),fim=dateBR(addDaysISO(v.data,dias));
  const logo=t.logo?`<img class="doc-logo" src="${t.logo}" alt="Logo da assistência">`:'';
  const val=(label,value)=>`<div class="doc-field"><b>${label}:</b> ${safe(value||'—')}</div>`;
  $('folha').innerHTML=`<article class="document">
  <div class="doc-head">${logo}<div class="doc-brand"><h1>${safe(t.nomeTec||'GUSXTA TECH')}</h1><p>${safe(t.docTec||'')}${t.foneTec?' · '+safe(t.foneTec):''}${t.instaTec?' · '+safe(t.instaTec):''}</p><p>${safe(t.endTec||'')}</p></div></div>
  <h2 class="doc-title">TERMO DE GARANTIA — VENDA DE PLACA DE VÍDEO</h2>
- <p class="doc-subtitle">Comprovante de venda e informações sobre a garantia legal do produto</p>
+ <p class="doc-subtitle">Comprovante de venda e prazo de garantia informado</p>
  <div class="doc-box"><h3>DADOS DO COMPRADOR</h3><div class="doc-grid">${val('Nome',v.cliente)}${val('CPF/CNPJ',v.cpf)}${val('Telefone',v.telefone)}${val('Endereço',v.endereco)}</div></div>
- <div class="doc-box"><h3>IDENTIFICAÇÃO DA GPU</h3><div class="doc-grid">${val('Modelo',v.gpu)}${val('Número de série',v.serial)}${val('Condição declarada',v.condicao||'Não informada')}${val('Data da venda',dateBR(v.data))}${val('Data da entrega',dateBR(entrega))}</div></div>
- <div class="doc-box"><h3>GARANTIA LEGAL — CÓDIGO DE DEFESA DO CONSUMIDOR</h3>
- <p>Nos termos do art. 26, inciso II, da Lei nº 8.078/1990 (Código de Defesa do Consumidor), o prazo legal para reclamar de vícios aparentes ou de fácil constatação em produtos duráveis é de <b>90 (noventa) dias</b>, contado da entrega efetiva do produto. Para esta venda, a entrega informada foi em <b>${dateBR(entrega)}</b>, com data de referência para o fim desse prazo em <b>${fim}</b>.</p>
+ <div class="doc-box"><h3>IDENTIFICAÇÃO DA GPU</h3><div class="doc-grid">${val('Modelo',v.gpu)}${val('Número de série',v.serial)}${val('Condição declarada',v.condicao||'Não informada')}${val('Data da venda',dateBR(v.data))}${val('Data da entrega',dateBR(entrega))}</div></div><div class="doc-box"><h3>DATAS DA GARANTIA — VENDA</h3><div class="doc-grid">${val('Início (data da compra)',dateBR(v.data))}${val('Fim previsto ('+dias+' dias)',fim)}</div></div>
+ ${dias===90?`<div class="doc-box"><h3>GARANTIA LEGAL — CÓDIGO DE DEFESA DO CONSUMIDOR</h3>
+ <p>Nos termos do art. 26, inciso II, da Lei nº 8.078/1990 (Código de Defesa do Consumidor), o prazo legal para reclamar de vícios aparentes ou de fácil constatação em produtos duráveis é de <b>90 (noventa) dias</b>, contado da entrega efetiva do produto. Neste documento, o período comercial informado vai da compra em <b>${dateBR(v.data)}</b> até <b>${fim}</b>. Para vícios aparentes, o prazo legal é contado da entrega efetiva, registrada em <b>${dateBR(entrega)}</b>; se a entrega ocorrer depois da compra, a data final do prazo legal poderá ser posterior à data comercial exibida.</p>
  <p>Para vícios ocultos, o prazo começa no momento em que o defeito ficar evidenciado, conforme art. 26, § 3º, do CDC. A garantia legal não depende de termo escrito (art. 24) e não pode ser afastada por cláusulas contratuais. A condição de produto usado ou recondicionado, quando informada, não elimina automaticamente a garantia legal.</p>
  <p><b>Condições de uso e conservação:</b> A garantia legal cobre vícios do produto nos termos do CDC, mas não abrange danos comprovadamente decorrentes de mau uso, quedas, impactos, contato com líquidos, instalação inadequada, alterações elétricas externas ou intervenções indevidas, quando tais eventos forem a causa do problema apresentado. A constatação será feita por avaliação técnica, considerando as circunstâncias do caso. Essas condições não afastam a responsabilidade do fornecedor por vícios preexistentes ou outros direitos previstos em lei.</p>
  <p>Em caso de problema, o comprador poderá entrar em contato com o fornecedor para avaliação e providências conforme os arts. 18 e 26 do CDC. Este documento não restringe os direitos assegurados pela legislação, nem exclui eventual garantia contratual adicional concedida em documento próprio.</p>
  ${v.garantiaObs?`<p><b>Informações adicionais:</b> ${safe(v.garantiaObs)}</p>`:''}
- </div>
+ </div>`:`<div class="doc-box"><h3>GARANTIA INFORMADA — ${dias} DIAS</h3><p>Prazo informado para esta venda: ${dias} dias, de ${dateBR(v.data)} até ${fim}. Este prazo não substitui nem reduz direitos legais obrigatórios do consumidor.</p>${v.garantiaObs?`<p><b>Informações adicionais:</b> ${safe(v.garantiaObs)}</p>`:''}</div>`}
  ${v.obs?`<div class="doc-box"><h3>OBSERVAÇÕES DA VENDA</h3><p>${safe(v.obs)}</p></div>`:''}
  <div class="doc-price">Valor da venda: ${fmt(v.venda)}</div>
  <p class="doc-legal">Declaro ter recebido o produto acima identificado e as informações de garantia descritas neste documento.</p>
@@ -289,25 +296,25 @@ function termoVenda(id){
  </article>`;
  tab('impressao');
 }
-function editarVenda(id){const v=vendas.find(x=>x.id===id);if(!v)return;[['vGpu','gpu'],['vSerial','serial'],['vData','data'],['vCliente','cliente'],['vCpf','cpf'],['vTelefone','telefone'],['vEndereco','endereco'],['vEntrega','entrega'],['vCondicao','condicao'],['vGarantiaObs','garantiaObs'],['vCusto','custo'],['vVenda','venda'],['vObs','obs']].forEach(([a,b])=>$(a).value=v[b]??'');$('vCusto').value=fmt(v.custo);$('vVenda').value=fmt(v.venda);splitAddress('ven',v.endereco||'');$('editVendaId').value=id;$('tituloVenda').textContent='Editar venda de GPU';atualizaLucro();tab('vendas')}
+function editarVenda(id){const v=vendas.find(x=>x.id===id);if(!v)return;[['vGpu','gpu'],['vSerial','serial'],['vData','data'],['vCliente','cliente'],['vCpf','cpf'],['vTelefone','telefone'],['vEndereco','endereco'],['vEntrega','entrega'],['vCondicao','condicao'],['vGarantiaObs','garantiaObs'],['vGarantiaDias','garantiaDias'],['vCusto','custo'],['vVenda','venda'],['vObs','obs']].forEach(([a,b])=>$(a).value=v[b]??'');$('vCusto').value=fmt(v.custo);$('vVenda').value=fmt(v.venda);splitAddress('ven',v.endereco||'');$('editVendaId').value=id;$('tituloVenda').textContent='Editar venda de GPU';atualizaLucro();tab('vendas');refreshWarrantyDates()}
 function excluirVenda(id){if(confirm('Excluir esta venda?')){vendas=vendas.filter(v=>v.id!==id);saveVendas();renderVendas();renderDashboard()}}
 function atualizaLucro(){$('vLucroPreview').value=fmt(parseBRL($('vVenda').value)-parseBRL($('vCusto').value))}
 $('vCusto').oninput=atualizaLucro;$('vVenda').oninput=atualizaLucro;$('buscaVendas').oninput=renderVendas;$('limparVenda').onclick=limparVenda;
-$('formVenda').onsubmit=e=>{e.preventDefault();syncAddress('ven','vEndereco');const id=$('editVendaId').value,v={gpu:$('vGpu').value.trim(),serial:$('vSerial').value.trim(),data:$('vData').value,cliente:$('vCliente').value.trim(),cpf:$('vCpf').value.trim(),telefone:$('vTelefone').value.trim(),endereco:$('vEndereco').value.trim(),entrega:$('vEntrega').value,condicao:$('vCondicao').value,garantiaObs:$('vGarantiaObs').value.trim(),custo:parseBRL($('vCusto').value),venda:parseBRL($('vVenda').value),obs:$('vObs').value.trim()};if(id){const i=vendas.findIndex(x=>x.id===id);if(i>=0)vendas[i]={...vendas[i],...v}}else{v.id=crypto.randomUUID();vendas.push(v)}saveVendas();limparVenda();renderVendas();renderDashboard();alert('Venda salva!')};
+$('formVenda').onsubmit=e=>{e.preventDefault();syncAddress('ven','vEndereco');const id=$('editVendaId').value,v={gpu:$('vGpu').value.trim(),serial:$('vSerial').value.trim(),data:$('vData').value,cliente:$('vCliente').value.trim(),cpf:$('vCpf').value.trim(),telefone:$('vTelefone').value.trim(),endereco:$('vEndereco').value.trim(),entrega:$('vEntrega').value,condicao:$('vCondicao').value,garantiaObs:$('vGarantiaObs').value.trim(),garantiaDias:Number($('vGarantiaDias').value),custo:parseBRL($('vCusto').value),venda:parseBRL($('vVenda').value),obs:$('vObs').value.trim()};if(id){const i=vendas.findIndex(x=>x.id===id);if(i>=0)vendas[i]={...vendas[i],...v}}else{v.id=crypto.randomUUID();vendas.push(v)}saveVendas();limparVenda();renderVendas();renderDashboard();alert('Venda salva!')};
 $('busca').oninput=render;
-function limpar(){$('formOS').reset();setTimeout(()=>clearAddress('cli'),0);$('editId').value='';$('dataEntrada').value=today();$('dataReparo').value=today();$('formTitulo').textContent='Cadastrar ordem de serviço / laudo técnico'}
+function limpar(){$('formOS').reset();setTimeout(()=>clearAddress('cli'),0);$('editId').value='';$('dataEntrada').value=today();$('dataReparo').value=today();$('osGarantiaDias').value='90';refreshWarrantyDates();$('formTitulo').textContent='Cadastrar ordem de serviço / laudo técnico'}
 $('limpar').onclick=limpar;
 $('formOS').onsubmit=e=>{
  e.preventDefault();syncAddress('cli','endCliente');let id=$('editId').value,o={};fields.forEach(f=>o[f]=$(f).value.trim());
- o.valor=parseBRL(o.valor);o.garantiaDias=GARANTIA_DIAS;
+ o.valor=parseBRL(o.valor);o.garantiaDias=Number($('osGarantiaDias').value);
  if(id){let i=ordens.findIndex(x=>x.id===id);ordens[i]={...ordens[i],...o}}
  else{o.id=crypto.randomUUID();o.numero=String(Date.now()).slice(-7);o.criado=Date.now();ordens.push(o)}
  save();limpar();render();tab('ordens');
 };
-function editar(id){let o=ordens.find(x=>x.id===id);if(!o)return;fields.forEach(f=>$(f).value=o[f]??'');$('valor').value=o.valor==null?'':fmt(o.valor);splitAddress('cli',o.endCliente||'');$('editId').value=id;$('formTitulo').textContent='Editar ordem de serviço / laudo técnico';tab('nova')}
+function editar(id){let o=ordens.find(x=>x.id===id);if(!o)return;fields.forEach(f=>$(f).value=o[f]??'');$('valor').value=o.valor==null?'':fmt(o.valor);splitAddress('cli',o.endCliente||'');$('osGarantiaDias').value=String(o.garantiaDias||90);$('editId').value=id;$('formTitulo').textContent='Editar ordem de serviço / laudo técnico';tab('nova');refreshWarrantyDates()}
 function excluir(id){if(confirm('Excluir esta ordem de serviço?')){ordens=ordens.filter(o=>o.id!==id);save();render()}}
 function ver(id){
- let o=ordens.find(x=>x.id===id);if(!o)return;let fim=dateBR(expiry(o).toISOString().slice(0,10)),t=tecnico;
+ let o=ordens.find(x=>x.id===id);if(!o)return;let fim=dateBR(expiry(o).toISOString().slice(0,10)),dias=Number(o.garantiaDias||90),t=tecnico;
  const logo=t.logo?`<img class="doc-logo" src="${t.logo}" alt="Logo da assistência">`:'';
  const val=(label,value)=>`<div class="doc-field"><b>${label}:</b> ${safe(value||'—')}</div>`;
  $('folha').innerHTML=`<article class="document">
@@ -315,13 +322,13 @@ function ver(id){
  <h2 class="doc-title">LAUDO TÉCNICO • ORDEM DE SERVIÇO Nº ${safe(o.numero)}</h2>
  <p class="doc-subtitle">Relatório de avaliação e reparo de placa de vídeo</p>
  <div class="doc-box"><h3>DADOS DO CLIENTE</h3><div class="doc-grid">${val('Nome',o.cliente)}${val('Telefone / WhatsApp',o.telefone)}${val('CPF / CNPJ',o.cpfCliente)}${val('Endereço',o.endCliente)}</div></div>
- <div class="doc-box"><h3>IDENTIFICAÇÃO DO EQUIPAMENTO</h3><div class="doc-grid">${val('Placa de vídeo / modelo',o.gpu)}${val('Número de série',o.serial)}${val('Data de entrada',dateBR(o.dataEntrada))}${val('Data do reparo / entrega',dateBR(o.dataReparo))}</div></div>
+ <div class="doc-box"><h3>IDENTIFICAÇÃO DO EQUIPAMENTO</h3><div class="doc-grid">${val('Placa de vídeo / modelo',o.gpu)}${val('Número de série',o.serial)}${val('Data de entrada',dateBR(o.dataEntrada))}${val('Data do reparo / entrega',dateBR(o.dataReparo))}</div></div><div class="doc-box"><h3>DATAS DA GARANTIA — REPARO</h3><div class="doc-grid">${val('Início (entrega do reparo)',dateBR(o.dataReparo))}${val('Fim previsto ('+dias+' dias)',fim)}</div></div>
  <div class="doc-box"><h3>RELATO E DIAGNÓSTICO TÉCNICO</h3><p><b>Defeito relatado pelo cliente:</b> ${safe(o.defeito||'Não informado')}</p><p><b>Defeito encontrado na análise:</b> ${safe(o.defeitoEncontrado)}</p><p><b>Local / linha / circuito reparado:</b> ${safe(o.localReparo)}</p><p><b>Procedimento e serviço executado:</b> ${safe(o.diagnostico)}</p>${o.observacoes?`<p><b>Observações:</b> ${safe(o.observacoes)}</p>`:''}</div>
- <div class="doc-box"><h3>TERMO DE GARANTIA DO SERVIÇO — 90 DIAS</h3>
+ ${dias===90?`<div class="doc-box"><h3>TERMO DE GARANTIA DO SERVIÇO — 90 DIAS</h3>
  <p>A assistência identificada neste documento concede garantia de 90 (noventa) dias para o serviço realizado, observadas as disposições do art. 26, inciso II, do Código de Defesa do Consumidor, quando aplicável a serviço durável. O prazo é contado da conclusão e entrega do serviço em ${dateBR(o.dataReparo)}, com término previsto em <b>${fim}</b>.</p>
  <p><b>Escopo técnico informado:</b> a garantia referente a este reparo diz respeito ao defeito descrito neste laudo e ao serviço executado na linha/circuito identificado como: <b>${safe(o.localReparo)}</b>.</p>
  <p><b>Cuidados e situações não cobertas:</b> Danos comprovadamente causados por mau uso, impactos, líquidos, alimentação elétrica inadequada ou intervenções indevidas posteriores ao reparo não são cobertos quando não guardarem relação com vício do serviço prestado. Qualquer ocorrência será analisada tecnicamente, sem exclusão automática da garantia legal nem prejuízo dos direitos do consumidor previstos no CDC.</p>
- <p>Em caso de retorno, o equipamento deverá ser apresentado para avaliação técnica, a fim de verificar o defeito e sua relação com o serviço realizado. A identificação do escopo do reparo não afasta a garantia legal, os prazos aplicáveis a vícios ocultos (art. 26, § 3º, do CDC), nem qualquer outro direito obrigatório do consumidor.</p></div>
+ <p>Em caso de retorno, o equipamento deverá ser apresentado para avaliação técnica, a fim de verificar o defeito e sua relação com o serviço realizado. A identificação do escopo do reparo não afasta a garantia legal, os prazos aplicáveis a vícios ocultos (art. 26, § 3º, do CDC), nem qualquer outro direito obrigatório do consumidor.</p></div>`:`<div class="doc-box"><h3>GARANTIA INFORMADA DO REPARO — ${dias} DIAS</h3><p>Prazo informado para o reparo realizado na linha/circuito ${safe(o.localReparo)}: ${dias} dias, de ${dateBR(o.dataReparo)} até ${fim}. Este prazo não substitui nem reduz direitos legais obrigatórios do consumidor.</p></div>`}
  <div class="doc-price">Valor cobrado pelo serviço: ${money(o.valor)}</div>
  <p class="doc-legal">Declaro que recebi as informações sobre a avaliação, o serviço executado e as condições de garantia descritas neste documento.</p>
  <p>Local e data: __________________________________________________________</p>
@@ -350,7 +357,7 @@ $('exportar').onclick=()=>{let blob=new Blob([JSON.stringify({versao:3,ordens,ve
 $('importar').onchange=async e=>{
  let f=e.target.files[0];if(!f)return;
  try{let d=JSON.parse(await f.text());if(!Array.isArray(d.ordens))throw Error();
-  if(confirm('Importar backup e substituir os dados atuais?')){ordens=d.ordens;vendas=Array.isArray(d.vendas)?d.vendas:[];tecnico=d.tecnico||tecnico;save();saveVendas();localStorage.setItem(TECH,JSON.stringify(tecnico));loadTech();render();renderVendas();renderDashboard();alert('Backup importado.')}
+  if(confirm('Importar backup e substituir os dados atuais?')){ordens=d.ordens;vendas=Array.isArray(d.vendas)?d.vendas:[];tecnico=d.tecnico||tecnico;save();saveVendas();localStorage.setItem(TECH,JSON.stringify(tecnico));loadTech();render();renderVendas();renderDashboard();refreshWarrantyDates();alert('Backup importado.')}
  }catch{alert('Arquivo de backup inválido.')}e.target.value='';
 };
 // Migração simples dos cadastros da versão anterior, se ainda existirem neste navegador.
@@ -434,6 +441,6 @@ for(const prefix of ['cli','ven','tec']){
  const retry=document.createElement('button');retry.type='button';retry.textContent='Consultar CEP novamente';retry.style.cssText='margin-top:5px;padding:5px 9px;font-size:12px';retry.onclick=()=>lookupCep(prefix);$(prefix+'CepStatus').after(retry);
 }
 
-$('dataEntrada').value=today();$('dataReparo').value=today();$('vData').value=today();$('vEntrega').value=today();loadTech();render();renderVendas();renderDashboard();
+$('dataEntrada').value=today();$('dataReparo').value=today();$('vData').value=today();$('vEntrega').value=today();loadTech();render();renderVendas();renderDashboard();refreshWarrantyDates();refreshWarrantyDates();
 </script>
 </body></html>

@@ -1,0 +1,11 @@
+# GUSXTA TECH — publicação no GitHub Pages
+
+1. Faça um backup JSON no GUSXTA TECH antigo **antes de mudar de endereço**.
+2. No GitHub, crie um repositório **público** novo, por exemplo `gusxta-tech`.
+3. Envie o arquivo `index.html` e o arquivo `.nojekyll` para a raiz do repositório.
+4. Vá em **Settings > Pages > Build and deployment**. Em **Source**, escolha **Deploy from a branch**; selecione `main` e `/ (root)` e salve.
+5. Depois da publicação, abra `https://SEU-USUARIO.github.io/gusxta-tech/`.
+6. Teste o CEP `01001-000`. O programa tentará ViaCEP e, se necessário, BrasilAPI.
+7. Se quiser trazer os registros antigos, importe o backup JSON pelo sistema.
+
+**Importante:** os dados continuam armazenados apenas no navegador/dispositivo (localStorage). Publicar o site não cria banco de dados nem sincronização entre dispositivos. Não envie backups, dados de clientes, tokens ou documentos para o repositório público. Faça backups periódicos. O GitHub Pages publica o código-fonte para qualquer pessoa ver, então não use o repositório como armazenamento privado. O site precisa de internet para consultar CEP.
